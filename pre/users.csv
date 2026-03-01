@@ -1,0 +1,7 @@
+id,email,password,role,username
+1,admin@test.com,admin123,admin,jhon
+2,citizen@test.com,1234,citizen,harry
+3,dagarveerang@gmail.com,hello23,citizen,veerang
+4,hello@test.com,myfell,citizen,Yashika
+5,citizen@test.com,1234,citizen,Veerang
+6,veer@abes.ac.in,3456,citizen,Veerang

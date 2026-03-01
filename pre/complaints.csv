@@ -1,0 +1,5 @@
+id,user,description,image,location,lat,lng,status,priority,date
+1,citizen@test.com,Pits,uploads/20260301_111645_1772344092691.heic,,,,Pending,Medium,2026-03-01 11:18:12.771496
+2,citizen@test.com,Pits,uploads/20260301_111645_1772344095564.heic,,,,Pending,Medium,2026-03-01 11:18:15.717028
+3,citizen@test.com,Construction site safety risk,uploads/20260301_111657_1772344251798.heic,,,,Pending,Medium,2026-03-01 11:20:51.838956
+4,citizen@test.com,Construction site safety risk,uploads/20260301_111657_1772344253956.heic,,,,Pending,Medium,2026-03-01 11:20:54.011339

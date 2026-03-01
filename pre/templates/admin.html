@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Complaint Management — Admin</title>
+
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+:root{
+--bg:#f4f6fb;
+--white:#ffffff;
+--ink:#111827;
+--mid:#6b7280;
+--rule:#e5e7eb;
+--accent:#2563eb;
+--pend:#b45309;
+--prog:#2563eb;
+--res:#15803d;
+}
+
+body{
+font-family:'IBM Plex Sans',sans-serif;
+background:var(--bg);
+color:var(--ink);
+font-size:14px;
+}
+
+header{
+background:var(--white);
+border-bottom:2px solid var(--accent);
+height:60px;
+padding:0 20px 0 16px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+box-shadow:0 2px 6px rgba(0,0,0,0.05);
+gap:10px;
+overflow:hidden;
+}
+
+.brand{
+display:flex;
+align-items:center;
+gap:10px;
+font-weight:600;
+font-size:17px;
+flex-shrink:0;
+}
+
+.brand-name{
+display:inline;
+}
+
+.brand-tag{
+background:var(--accent);
+color:#fff;
+font-size:11px;
+padding:4px 10px;
+border-radius:4px;
+text-transform:uppercase;
+letter-spacing:.08em;
+}
+
+/* filter-bar removed */
+
+main{
+max-width:780px;
+margin:24px auto;
+padding:0 20px;
+display:block;
+transition:margin-right .3s cubic-bezier(.4,0,.2,1), margin-left .3s cubic-bezier(.4,0,.2,1);
+}
+
+@media (min-width:769px){
+  main{
+    margin:24px calc(300px + 24px) 24px 24px;
+    max-width:none;
+    width:auto;
+    padding:0 20px;
+  }
+  main.sidebar-collapsed{
+    margin-right:24px;
+  }
+}
+
+.content-area{ width:100%; }
+
+/* ---- SIDEBAR TOGGLE BUTTON ---- */
+.sidebar-toggle{
+width:36px;
+height:36px;
+background:none;
+border:1px solid var(--rule);
+border-radius:8px;
+cursor:pointer;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:5px;
+padding:0;
+flex-shrink:0;
+transition:background .15s, border-color .15s;
+}
+.sidebar-toggle:hover{ background:#eef2ff; border-color:#c7d2fe; }
+.sidebar-toggle span{
+display:block;
+width:16px;
+height:2px;
+background:var(--ink);
+border-radius:2px;
+}
+
+/* ---- SIDEBAR OVERLAY ---- */
+.sidebar-overlay{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.35);
+z-index:299;
+backdrop-filter:blur(2px);
+}
+.sidebar-overlay.show{ display:block; }
+
+/* ---- SIDEBAR PANEL (fixed slide-in) ---- */
+.sidebar{
+position:fixed;
+top:0;
+right:0;
+height:100vh;
+width:300px;
+background:var(--white);
+border-left:1px solid var(--rule);
+box-shadow:-6px 0 30px rgba(0,0,0,.12);
+z-index:300;
+display:flex;
+flex-direction:column;
+gap:0;
+overflow-y:auto;
+padding:20px 16px 32px;
+transform:translateX(100%);
+transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.open{ transform:translateX(0); }
+
+/* Desktop: sidebar open by default */
+@media (min-width:769px){
+  .sidebar{ transform:translateX(0); top:60px; height:calc(100vh - 60px); }
+  .sidebar-overlay{ display:none !important; }
+  .sidebar.desktop-collapsed{ transform:translateX(100%); }
+  .sidebar-close{ display:none; }
+}
+
+.sidebar-header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-bottom:16px;
+padding-bottom:12px;
+border-bottom:2px solid var(--accent);
+}
+.sidebar-header h2{
+font-size:14px;
+font-weight:700;
+text-transform:uppercase;
+letter-spacing:.06em;
+color:var(--accent);
+}
+.sidebar-close{
+background:none;
+border:none;
+font-size:22px;
+cursor:pointer;
+color:var(--mid);
+line-height:1;
+padding:0 2px;
+}
+.sidebar-close:hover{ color:var(--ink); }
+
+.card{
+background:var(--bg);
+border-radius:12px;
+padding:16px 14px;
+border:1px solid var(--rule);
+border-left:4px solid var(--accent);
+margin-bottom:14px;
+}
+
+/* Individual card accent colors */
+.card:nth-child(2) { border-left-color: #f97316; }
+.card:nth-child(3) { border-left-color: #2563eb; }
+.card:nth-child(4) { border-left-color: #16a34a; }
+.card:nth-child(5) { border-left-color: #dc2626; }
+
+
+/* ---------------- POST RESPONSE BAR (Instagram creator card) ---------------- */
+
+.post-bar{
+display:flex;
+flex-direction:column;
+background:var(--white);
+border:1px solid var(--rule);
+border-radius:14px;
+padding:0;
+margin-bottom:14px;
+box-shadow:0 2px 12px rgba(0,0,0,0.06);
+overflow:hidden;
+}
+
+.post-bar-top{
+display:flex;
+align-items:center;
+gap:10px;
+padding:12px 14px;
+}
+
+.post-avatar{
+width:38px;
+height:38px;
+border-radius:50%;
+background:linear-gradient(135deg,#667eea,#764ba2);
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0;
+}
+
+.post-avatar svg{
+width:20px;
+height:20px;
+fill:#fff;
+}
+
+.post-input{
+flex:1;
+border:none;
+outline:none;
+font-size:14px;
+font-family:'IBM Plex Sans',sans-serif;
+color:var(--ink);
+background:transparent;
+}
+
+.post-input::placeholder{
+color:#9ca3af;
+}
+
+/* Post button hidden from top row — moved to action row */
+.post-btn{
+background:var(--accent);
+color:#fff;
+border:none;
+padding:6px 18px;
+border-radius:20px;
+font-size:13px;
+font-weight:600;
+font-family:'IBM Plex Sans',sans-serif;
+cursor:pointer;
+flex-shrink:0;
+transition:background .15s;
+}
+
+.post-btn:hover{
+background:#1d4ed8;
+}
+
+/* ---- POST ACTION ROW (bottom strip, like Instagram) ---- */
+.post-actions{
+display:flex;
+align-items:center;
+gap:0;
+border-top:1px solid var(--rule);
+padding:8px 14px;
+background:#fafafa;
+}
+
+.post-action-btn{
+display:flex;
+align-items:center;
+gap:5px;
+padding:5px 12px;
+border-radius:8px;
+border:none;
+background:transparent;
+cursor:pointer;
+font-size:12px;
+font-weight:500;
+color:var(--mid);
+font-family:'IBM Plex Sans',sans-serif;
+transition:background .15s, color .15s;
+flex-shrink:0;
+}
+
+.post-action-btn:hover{
+background:#eef2ff;
+color:var(--accent);
+}
+
+.post-action-btn svg{
+width:18px;
+height:18px;
+display:block;
+flex-shrink:0;
+}
+
+/* Spacer between action buttons and Post button */
+.post-actions-spacer{
+flex:1;
+}
+
+/* ---- ATTACHMENT PREVIEW ---- */
+.post-attachments{
+display:none;
+flex-wrap:wrap;
+gap:8px;
+width:100%;
+padding:10px 14px;
+border-top:1px solid var(--rule);
+}
+.post-attachments.has-items{ display:flex; }
+
+.attach-thumb{
+position:relative;
+width:70px;
+height:70px;
+border-radius:8px;
+overflow:hidden;
+border:1px solid var(--rule);
+}
+.attach-thumb img{ width:100%; height:100%; object-fit:cover; }
+.attach-remove{
+position:absolute;
+top:2px;
+right:2px;
+width:18px;
+height:18px;
+border-radius:50%;
+background:rgba(0,0,0,.55);
+color:#fff;
+border:none;
+cursor:pointer;
+font-size:11px;
+display:flex;
+align-items:center;
+justify-content:center;
+line-height:1;
+}
+
+.attach-loc-tag{
+display:inline-flex;
+align-items:center;
+gap:6px;
+background:#dcfce7;
+color:#15803d;
+border-radius:20px;
+padding:5px 12px;
+font-size:12px;
+font-weight:500;
+align-self:center;
+}
+.attach-loc-tag button{
+background:none;
+border:none;
+cursor:pointer;
+color:#15803d;
+font-size:14px;
+line-height:1;
+padding:0;
+margin-left:2px;
+}
+
+.attach-poll-preview{
+background:#eef2ff;
+border:1px solid #c7d2fe;
+border-radius:10px;
+padding:12px 14px;
+width:100%;
+font-size:13px;
+}
+.attach-poll-preview .poll-title{
+font-weight:600;
+margin-bottom:8px;
+color:var(--ink);
+}
+.attach-poll-preview .poll-opt{
+background:#fff;
+border:1px solid #c7d2fe;
+border-radius:6px;
+padding:6px 10px;
+margin-bottom:5px;
+color:var(--mid);
+display:flex;
+align-items:center;
+gap:6px;
+}
+.attach-poll-preview .poll-opt::before{
+content:"";
+width:14px;
+height:14px;
+border-radius:50%;
+border:2px solid #c7d2fe;
+flex-shrink:0;
+}
+
+/* ---- MODAL OVERLAY ---- */
+.modal-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.4);
+z-index:500;
+display:none;
+align-items:center;
+justify-content:center;
+}
+.modal-overlay.show{ display:flex; }
+
+.modal{
+background:var(--white);
+border-radius:16px;
+padding:28px;
+width:460px;
+max-width:95vw;
+box-shadow:0 20px 60px rgba(0,0,0,.18);
+position:relative;
+animation:popIn .18s ease;
+}
+
+.modal h4{
+font-size:16px;
+font-weight:600;
+margin-bottom:18px;
+}
+
+.modal-close{
+position:absolute;
+top:16px;
+right:18px;
+background:none;
+border:none;
+font-size:22px;
+cursor:pointer;
+color:var(--mid);
+line-height:1;
+}
+.modal-close:hover{ color:var(--ink); }
+
+/* Poll builder */
+.poll-question-input{
+width:100%;
+border:1px solid var(--rule);
+border-radius:8px;
+padding:9px 12px;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+outline:none;
+margin-bottom:14px;
+}
+.poll-question-input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+
+.poll-option-row{
+display:flex;
+align-items:center;
+gap:8px;
+margin-bottom:10px;
+}
+.poll-option-row input{
+flex:1;
+border:1px solid var(--rule);
+border-radius:8px;
+padding:8px 12px;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+outline:none;
+}
+.poll-option-row input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.poll-remove{
+background:none;
+border:none;
+cursor:pointer;
+color:var(--mid);
+font-size:20px;
+line-height:1;
+padding:0 4px;
+}
+.poll-remove:hover{ color:#dc2626; }
+
+.btn-add-option{
+background:none;
+border:1px dashed var(--accent);
+color:var(--accent);
+border-radius:8px;
+padding:7px 14px;
+font-size:13px;
+cursor:pointer;
+font-family:'IBM Plex Sans',sans-serif;
+width:100%;
+margin-bottom:16px;
+transition:background .12s;
+}
+.btn-add-option:hover{ background:#eef2ff; }
+
+.poll-duration{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:18px;
+font-size:13px;
+color:var(--mid);
+}
+.poll-duration select{
+border:1px solid var(--rule);
+border-radius:8px;
+padding:6px 10px;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+}
+
+.btn-modal-submit{
+background:var(--accent);
+color:#fff;
+border:none;
+border-radius:8px;
+padding:10px 22px;
+font-size:13px;
+font-weight:600;
+font-family:'IBM Plex Sans',sans-serif;
+cursor:pointer;
+width:100%;
+transition:background .15s;
+}
+.btn-modal-submit:hover{ background:#1d4ed8; }
+
+/* Location modal */
+.loc-display{
+background:#f3f4f6;
+border-radius:10px;
+padding:16px;
+font-size:13px;
+color:var(--mid);
+text-align:center;
+margin-bottom:16px;
+min-height:64px;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+}
+.loc-display.found{ color:#15803d; background:#dcfce7; font-weight:500; }
+
+/* hidden file input */
+#fileInput{ display:none; }
+
+/* ---- INSTAGRAM-STYLE FEED ---- */
+.feed{
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+.feed-empty{
+text-align:center;
+padding:60px 20px;
+color:var(--mid);
+font-size:15px;
+background:var(--white);
+border-radius:12px;
+border:1px solid var(--rule);
+}
+
+.post-card{
+background:var(--white);
+border-radius:14px;
+border:1px solid var(--rule);
+box-shadow:0 2px 12px rgba(0,0,0,0.06);
+overflow:hidden;
+transition:box-shadow .2s;
+}
+.post-card:hover{ box-shadow:0 4px 20px rgba(0,0,0,0.10); }
+
+/* Card header */
+.post-card-header{
+display:flex;
+align-items:center;
+gap:10px;
+padding:14px 16px 10px;
+}
+.post-card-avatar{
+width:38px;
+height:38px;
+border-radius:50%;
+background:linear-gradient(135deg,#e0e7ff,#c7d2fe);
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0;
+border:2px solid #c7d2fe;
+}
+.post-card-avatar svg{
+width:20px;
+height:20px;
+fill:#4f72db;
+}
+.post-card-meta{
+flex:1;
+display:flex;
+flex-direction:column;
+gap:2px;
+min-width:0;
+}
+.post-card-user{
+font-weight:700;
+font-size:13px;
+color:var(--ink);
+}
+.post-card-time{
+font-size:11px;
+color:var(--mid);
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+.post-card-status-pill{
+flex-shrink:0;
+}
+
+/* Card image */
+.post-card-img-wrap{
+  width:100%;
+  max-height:360px;
+  overflow:hidden;
+  background:#f3f4f6;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.post-card-img{
+  width:100%;
+  height:auto;
+  max-height:360px;
+  object-fit:contain;
+  display:block;
+  background:#f3f4f6;
+}
+
+/* Card body */
+.post-card-body{
+padding:12px 16px 8px;
+}
+.post-card-desc{
+font-size:14px;
+line-height:1.6;
+color:var(--ink);
+margin:0;
+}
+
+/* Card footer */
+.post-card-footer{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:8px 16px 12px;
+border-top:1px solid var(--rule);
+gap:10px;
+flex-wrap:wrap;
+}
+.post-card-actions{
+display:flex;
+align-items:center;
+gap:12px;
+}
+.post-card-action-btn{
+background:none;
+border:none;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:5px;
+font-size:13px;
+color:var(--mid);
+font-family:'IBM Plex Sans',sans-serif;
+font-weight:500;
+padding:4px 2px;
+border-radius:6px;
+transition:color .15s;
+}
+.post-card-action-btn:hover{ color:var(--ink); }
+.post-card-action-btn svg{
+width:18px;
+height:18px;
+transition:fill .2s, stroke .2s;
+}
+.post-card-action-btn.liked{ color:#ef4444; }
+.like-count{ min-width:14px; }
+.post-card-status-wrap{ flex-shrink:0; }
+
+/* Comments */
+.post-card-comment-box{
+display:none;
+align-items:center;
+gap:8px;
+padding:10px 16px;
+border-top:1px solid var(--rule);
+background:#fafafa;
+}
+.comment-input{
+flex:1;
+border:1px solid var(--rule);
+border-radius:20px;
+padding:7px 14px;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+outline:none;
+background:#fff;
+}
+.comment-input:focus{ border-color:var(--accent); }
+.comment-submit{
+background:var(--accent);
+color:#fff;
+border:none;
+border-radius:20px;
+padding:7px 16px;
+font-size:12px;
+font-weight:600;
+font-family:'IBM Plex Sans',sans-serif;
+cursor:pointer;
+flex-shrink:0;
+}
+.comment-submit:hover{ background:#1d4ed8; }
+
+.post-card-comments{
+padding:0 16px 4px;
+display:flex;
+flex-direction:column;
+gap:6px;
+}
+.post-comment{
+display:flex;
+gap:6px;
+font-size:13px;
+padding:6px 0;
+border-bottom:1px solid var(--rule);
+}
+.post-comment:last-child{ border-bottom:none; }
+.comment-author{
+font-weight:700;
+color:var(--ink);
+flex-shrink:0;
+}
+.comment-text{ color:var(--mid); }
+
+/* ---- TABLE (hidden but keep for JS compat) ---- */
+#list-hidden{ display:none; }
+
+
+.card h3{
+font-size:13px;
+margin-bottom:12px;
+font-weight:600;
+padding-bottom:8px;
+border-bottom:1px solid var(--rule);
+text-transform:uppercase;
+letter-spacing:.04em;
+color:var(--mid);
+}
+
+.total-number{
+font-size:42px;
+font-weight:700;
+margin-top:6px;
+line-height:1;
+}
+
+.top-list{
+list-style:none;
+}
+
+.top-list li{
+display:flex;
+justify-content:space-between;
+padding:6px 0;
+font-size:13px;
+border-bottom:1px dashed var(--rule);
+}
+
+.top-list li:last-child {
+border-bottom: none;
+}
+
+.stat-row{
+display:flex;
+align-items:center;
+gap:8px;
+margin-bottom:10px;
+padding-bottom:10px;
+border-bottom:1px dashed var(--rule);
+font-size:13px;
+}
+
+.stat-row:last-child {
+margin-bottom:0;
+padding-bottom:0;
+border-bottom:none;
+}
+
+.stat-icon{
+width:22px;
+height:22px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:6px;
+font-size:12px;
+font-weight:600;
+}
+
+.warn{ background:#fef3c7; color:#b45309; }
+.fast{ background:#dbeafe; color:#2563eb; }
+.alert{ background:#fee2e2; color:#b91c1c; }
+
+.heatmap{
+height:220px;
+border-radius:10px;
+position:relative;
+overflow:hidden;
+background:#e8eaf0;
+}
+
+#heatmapMap{
+width:100%;
+height:100%;
+border-radius:10px;
+}
+
+.heatmap-loading{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:8px;
+background:#f3f4f6;
+border-radius:10px;
+color:var(--mid);
+font-size:12px;
+}
+
+.heatmap-spinner{
+width:24px;
+height:24px;
+border:3px solid #e5e7eb;
+border-top-color:var(--accent);
+border-radius:50%;
+animation:spin .7s linear infinite;
+}
+
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.heatmap-error{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:8px;
+background:#fff1f2;
+border-radius:10px;
+color:#b91c1c;
+font-size:12px;
+padding:12px;
+text-align:center;
+}
+
+.heatmap-legend{
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-top:8px;
+font-size:10px;
+color:var(--mid);
+}
+
+.heatmap-legend-bar{
+flex:1;
+height:6px;
+border-radius:3px;
+background:linear-gradient(to right,#4ade80,#facc15,#ef4444);
+margin:0 6px;
+}
+
+/* ------------------------------------------------ */
+
+/* ---- SEARCH BAR (Instagram pill style) ---- */
+.search-bar{
+position:relative;
+display:flex;
+flex-direction:column;
+gap:10px;
+background:var(--white);
+padding:10px 12px;
+border-radius:12px;
+box-shadow:0 2px 10px rgba(0,0,0,0.05);
+margin-bottom:14px;
+border:1px solid var(--rule);
+}
+
+/* Instagram-style search pill */
+.search-input-wrap{
+flex:1;
+display:flex;
+align-items:center;
+gap:8px;
+background:#f0f2f5;
+border-radius:22px;
+padding:8px 14px;
+min-width:180px;
+}
+.search-input-wrap svg{
+width:15px;
+height:15px;
+stroke:#9ca3af;
+stroke-width:2;
+flex-shrink:0;
+}
+
+.search-input{
+flex:1;
+border:none;
+outline:none;
+font-size:14px;
+padding:0;
+background:transparent;
+min-width:0;
+color:var(--ink);
+}
+
+.search-input::placeholder{ color:#9ca3af; }
+
+/* Filter & Sort buttons */
+.search-btn{
+background:#f0f2f5;
+border:none;
+padding:8px 13px;
+border-radius:22px;
+cursor:pointer;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+color:var(--mid);
+display:inline-flex;
+align-items:center;
+gap:5px;
+transition:background .15s, color .15s;
+font-weight:500;
+white-space:nowrap;
+flex-shrink:0;
+}
+
+.search-btn:hover{
+background:#dbeafe;
+color:var(--accent);
+}
+
+/* Icon for Filter button */
+.search-btn:first-of-type::before{
+content:"";
+display:inline-block;
+width:13px;
+height:13px;
+background-color:currentColor;
+-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='3' y1='6' x2='21' y2='6'/%3E%3Cline x1='6' y1='12' x2='18' y2='12'/%3E%3Cline x1='9' y1='18' x2='15' y2='18'/%3E%3C/svg%3E");
+mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='3' y1='6' x2='21' y2='6'/%3E%3Cline x1='6' y1='12' x2='18' y2='12'/%3E%3Cline x1='9' y1='18' x2='15' y2='18'/%3E%3C/svg%3E");
+-webkit-mask-repeat:no-repeat;
+mask-repeat:no-repeat;
+-webkit-mask-size:contain;
+mask-size:contain;
+flex-shrink:0;
+}
+
+/* Icon for Sort button */
+.search-btn:last-of-type::before{
+content:"";
+display:inline-block;
+width:13px;
+height:13px;
+background-color:currentColor;
+-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6l4-3v14M7 18H3M11 6h10M11 12h7M11 18h4'/%3E%3C/svg%3E");
+mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6l4-3v14M7 18H3M11 6h10M11 12h7M11 18h4'/%3E%3C/svg%3E");
+-webkit-mask-repeat:no-repeat;
+mask-repeat:no-repeat;
+-webkit-mask-size:contain;
+mask-size:contain;
+flex-shrink:0;
+}
+
+/* Status select dropdown */
+.adv-filter{
+appearance:none;
+-webkit-appearance:none;
+padding:8px 28px 8px 12px;
+border:none;
+border-radius:22px;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+color:var(--mid);
+background-color:#f0f2f5;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+background-repeat:no-repeat;
+background-position:right 10px center;
+cursor:pointer;
+transition:background .15s;
+flex-shrink:0;
+}
+
+.adv-filter:focus{
+outline:none;
+background-color:#dbeafe;
+color:var(--accent);
+}
+
+.adv-filter:hover{
+background-color:#e5e7eb;
+}
+
+/* Style the select options */
+.adv-filter option{
+padding:8px 12px;
+font-size:13px;
+}
+
+.dropdown{ position:relative; }
+
+.search-controls{
+display:flex;
+gap:6px;
+align-items:center;
+flex-shrink:0;
+}
+
+.search-filter-row{
+display:flex;
+align-items:center;
+gap:8px;
+width:100%;
+flex-wrap:wrap;
+}
+
+/* Filter chips */
+.filter-chips{
+display:flex;
+align-items:center;
+gap:6px;
+flex:1;
+flex-wrap:wrap;
+min-width:0;
+}
+
+.chip{
+padding:6px 14px;
+border:1.5px solid var(--rule);
+border-radius:20px;
+background:#fff;
+font-size:12px;
+font-weight:500;
+font-family:'IBM Plex Sans',sans-serif;
+color:var(--mid);
+cursor:pointer;
+white-space:nowrap;
+transition:all .15s;
+flex-shrink:0;
+}
+
+.chip:hover{
+border-color:var(--accent);
+color:var(--accent);
+background:#eef2ff;
+}
+
+.chip-active{
+background:var(--accent);
+border-color:var(--accent);
+color:#fff;
+font-weight:600;
+}
+
+.chip-active:hover{
+background:#1d4ed8;
+border-color:#1d4ed8;
+color:#fff;
+}
+
+/* Status-colored active chips */
+.chip[data-status="Pending"].chip-active    { background:#6d28d9; border-color:#6d28d9; }
+.chip[data-status="In Progress"].chip-active{ background:#2563eb; border-color:#2563eb; }
+.chip[data-status="Completed"].chip-active  { background:#15803d; border-color:#15803d; }
+.chip[data-status="Delayed"].chip-active    { background:#b91c1c; border-color:#b91c1c; }
+.chip[data-status="Escalated"].chip-active  { background:#1f2937; border-color:#1f2937; }
+
+/* Location filter input — inline */
+.loc-filter{
+padding:6px 12px !important;
+border:1.5px solid var(--rule) !important;
+border-radius:20px !important;
+background:#fff !important;
+font-size:12px !important;
+color:var(--ink) !important;
+outline:none;
+min-width:110px;
+max-width:150px;
+transition:border-color .15s;
+}
+
+.dropdown-menu{
+position:absolute;
+top:44px;
+right:0;
+background:white;
+border:1px solid var(--rule);
+border-radius:10px;
+box-shadow:0 10px 28px rgba(0,0,0,0.10);
+display:none;
+flex-direction:column;
+min-width:200px;
+z-index:100;
+overflow:hidden;
+padding:4px;
+}
+
+.dropdown-menu button{
+padding:9px 12px;
+border:none;
+background:transparent;
+text-align:left;
+cursor:pointer;
+font-size:13px;
+font-family:'IBM Plex Sans',sans-serif;
+color:var(--ink);
+border-radius:6px;
+display:flex;
+align-items:center;
+gap:8px;
+transition:background .12s;
+}
+
+.dropdown-menu button:hover{ background:#f3f4f6; }
+.dropdown-menu button.active{ background:#dbeafe; color:var(--accent); font-weight:600; }
+
+/* Status color dots inside filter menu */
+#filterMenu button:nth-child(1)::before{ content:""; width:8px; height:8px; border-radius:50%; background:#6d28d9; display:inline-block; flex-shrink:0; }
+#filterMenu button:nth-child(2)::before{ content:""; width:8px; height:8px; border-radius:50%; background:#1d4ed8; display:inline-block; flex-shrink:0; }
+#filterMenu button:nth-child(3)::before{ content:""; width:8px; height:8px; border-radius:50%; background:#15803d; display:inline-block; flex-shrink:0; }
+#filterMenu button:nth-child(4)::before{ content:""; width:8px; height:8px; border-radius:50%; background:#b91c1c; display:inline-block; flex-shrink:0; }
+#filterMenu button:nth-child(5)::before{ content:"✕"; font-size:10px; color:#9ca3af; }
+
+/* Sort menu icons */
+#sortMenu button:nth-child(1)::before{ content:"↓"; font-size:13px; color:var(--mid); }
+#sortMenu button:nth-child(2)::before{ content:"↑"; font-size:13px; color:var(--mid); }
+#sortMenu button:nth-child(3)::before{ content:"A→Z"; font-size:10px; font-weight:700; color:var(--mid); }
+#sortMenu button:nth-child(4)::before{ content:"Z→A"; font-size:10px; font-weight:700; color:var(--mid); }
+
+.suggestions{
+position:absolute;
+top:45px;
+left:14px;
+right:14px;
+background:white;
+border:1px solid var(--rule);
+border-radius:8px;
+box-shadow:0 8px 20px rgba(0,0,0,0.08);
+display:none;
+z-index:200;
+max-height:180px;
+overflow-y:auto;
+}
+
+.suggestion-item{
+padding:8px 12px;
+cursor:pointer;
+font-size:13px;
+}
+
+.suggestion-item:hover{ background:#f3f4f6; }
+
+mark{
+background:#fde68a;
+padding:0 3px;
+border-radius:3px;
+}
+
+
+.pill{
+font-size:11px;
+padding:4px 10px;
+border-radius:20px;
+font-weight:600;
+display:inline-block;
+}
+
+/* ---- BAR CHART ---- */
+.bar-chart{
+width:100%;
+display:block;
+overflow:visible;
+}
+
+
+.status-select{
+appearance:none;
+-webkit-appearance:none;
+border:none;
+border-radius:20px;
+padding:5px 26px 5px 11px;
+font-size:11px;
+font-weight:600;
+font-family:'IBM Plex Sans',sans-serif;
+cursor:pointer;
+outline:none;
+background-repeat:no-repeat;
+background-position:right 8px center;
+background-size:10px;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+transition:filter .15s;
+}
+.status-select:hover{ filter:brightness(.94); }
+
+.s-Pending-pill  { background:#ede9fe; color:#6d28d9; }
+.s-inprogress-pill{ background:#dbeafe; color:#1d4ed8; }
+.s-completed-pill { background:#dcfce7; color:#15803d; }
+.s-delayed-pill   { background:#fee2e2; color:#b91c1c; }
+.s-escalated-pill { background:#1f2937; color:#f9fafb; }
+
+.status-select.s-Pending  { background-color:#ede9fe; color:#6d28d9; }
+.status-select.s-inprogress{ background-color:#dbeafe; color:#1d4ed8; }
+.status-select.s-completed { background-color:#dcfce7; color:#15803d; }
+.status-select.s-delayed   { background-color:#fee2e2; color:#b91c1c; }
+.status-select.s-escalated { background-color:#1f2937; color:#f9fafb; }
+
+.pagination{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:12px;
+margin-top:20px;
+}
+
+.page-btn{
+padding:6px 14px;
+border:1px solid var(--rule);
+background:white;
+cursor:pointer;
+border-radius:6px;
+font-size:13px;
+}
+
+.page-btn:disabled{
+opacity:.5;
+cursor:not-allowed;
+}
+
+.empty{
+padding:60px;
+text-align:center;
+color:var(--mid);
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet / Mobile (≤768px)
+   ============================================================ */
+@media (max-width:768px){
+  header{ padding:10px 12px; gap:8px; }
+  .brand{ font-size:14px; gap:8px; }
+  .brand-tag{ font-size:10px; padding:3px 8px; }
+  .ftab{ padding:7px 12px; font-size:11px; }
+  main{ padding:0 10px; margin:12px auto; margin-bottom:72px; }
+
+  .post-avatar{ width:34px; height:34px; }
+  .post-avatar svg{ width:18px; height:18px; }
+  .post-input{ font-size:13px; }
+  .post-action-btn{ padding:5px 10px; font-size:12px; }
+  .post-action-btn svg{ width:15px; height:15px; }
+  .post-btn{ padding:6px 14px; font-size:12px; }
+
+  .adv-filter{ font-size:12px; padding:7px 22px 7px 10px; }
+  .search-btn{ padding:7px 10px; font-size:12px; }
+  .search-btn::before{ display:none; }
+
+  /* Search bar: input full-width, filters wrap below */
+  .search-bar{ flex-wrap:wrap; gap:8px; padding:8px 10px; }
+  .search-input-wrap{ flex:0 0 100%; min-width:0; }
+  .search-filter-row{ width:100%; flex:0 0 100%; gap:6px; }
+  .filter-chips{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px; }
+  .filter-chips::-webkit-scrollbar{ display:none; }
+  .chip{ padding:5px 12px; font-size:11px; }
+  .search-controls{ flex-shrink:0; margin-left:auto; }
+  .loc-filter{ max-width:100px; min-width:80px; }
+  #advStatusFilter{ flex:1; min-width:80px; }
+
+  .post-card-img-wrap{ max-height:280px; }
+  .post-card-img{ max-height:280px; }
+
+  .sidebar{ width:85vw; max-width:340px; top:60px; height:calc(100vh - 60px); padding-bottom:80px; }
+  .sidebar-close{ display:flex !important; }
+  .mobile-bottom-nav{ display:flex; }
+}
+
+/* ============================================================
+   MOBILE BOTTOM NAV (Instagram-style)
+   ============================================================ */
+.mobile-bottom-nav{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:58px;
+  background:var(--white);
+  border-top:1px solid var(--rule);
+  z-index:400;
+  align-items:center;
+  justify-content:space-around;
+  box-shadow:0 -2px 16px rgba(0,0,0,0.07);
+  padding-bottom:env(safe-area-inset-bottom, 0);
+}
+
+.mobile-nav-btn{
+  flex:1;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:#9ca3af;
+  font-size:9px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  transition:color .15s;
+  padding:0;
+}
+.mobile-nav-btn:hover,
+.mobile-nav-btn.active{ color:var(--ink); }
+.mobile-nav-btn svg{
+  width:24px;
+  height:24px;
+}
+.mobile-nav-btn span{ line-height:1; }
+
+/* Special Post button — accent style */
+.mobile-nav-post{
+  color:var(--accent);
+}
+.mobile-nav-post:hover,
+.mobile-nav-post.active{
+  color:#1d4ed8;
+}
+.mobile-nav-post svg{
+  background:var(--accent);
+  color:#fff !important;
+  stroke:#fff;
+  border-radius:10px;
+  padding:4px;
+  width:32px;
+  height:32px;
+  transition:background .15s;
+}
+.mobile-nav-post:hover svg,
+.mobile-nav-post.active svg{
+  background:#1d4ed8;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile (≤480px)
+   ============================================================ */
+@media (max-width:480px){
+  header{ padding:10px 10px; gap:6px; }
+  .brand-name{ display:none; }
+  #filter-bar{ overflow-x:auto; }
+  .ftab{ padding:6px 10px; white-space:nowrap; }
+  main{ padding:0 8px; margin:10px auto; margin-bottom:72px; }
+
+  .post-action-btn{ padding:5px 8px; font-size:11px; }
+
+  .post-card-img-wrap{ max-height:220px; }
+  .post-card-img{ max-height:220px; }
+  .post-card-desc{ font-size:13px; }
+
+  /* Compact search bar on small phones */
+  .search-bar{ padding:6px 8px; }
+  .chip{ padding:5px 10px; font-size:11px; }
+  .loc-filter{ display:none; }
+  .search-controls .search-btn{ padding:6px 8px; font-size:11px; }
+
+  .sidebar{ width:92vw; }
+  .pagination{ gap:8px; }
+  .page-btn{ padding:8px 14px; font-size:12px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="brand">
+<button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Stats Panel" aria-label="Toggle Stats">
+  <span></span><span></span><span></span>
+</button>
+<span class="brand-tag">ADMIN</span>
+<span class="brand-name">Complaint Management System</span>
+</div>
+
+
+</header>
+
+<main>
+
+<div class="content-area">
+
+<div class="post-bar">
+<div class="post-bar-top">
+<div class="post-avatar">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+</div>
+<input type="text" class="post-input" id="postInput" placeholder="Post a response to complaints...">
+</div>
+
+<div class="post-actions">
+<!-- Image Upload -->
+<button class="post-action-btn" onclick="triggerImageUpload()" title="Upload Image">
+<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3" y="3" width="18" height="18" rx="3"/>
+<circle cx="8.5" cy="8.5" r="1.5"/>
+<polyline points="21 15 16 10 5 21"/>
+</svg>
+Photo
+</button>
+<!-- Poll -->
+<button class="post-action-btn" onclick="openPollModal()" title="Create Poll">
+<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<line x1="18" y1="20" x2="18" y2="10"/>
+<line x1="12" y1="20" x2="12" y2="4"/>
+<line x1="6" y1="20" x2="6" y2="14"/>
+</svg>
+Poll
+</button>
+<!-- Location -->
+<button class="post-action-btn" onclick="openLocModal()" title="Share Location">
+<svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+<circle cx="12" cy="9" r="2.5"/>
+</svg>
+Location
+</button>
+<div class="post-actions-spacer"></div>
+<input type="file" id="fileInput" accept="image/*" multiple onchange="handleImageUpload(event)" style="display:none">
+<button class="post-btn" onclick="submitPost()">Post</button>
+</div>
+<div class="post-attachments" id="postAttachments"></div>
+</div>
+
+<div class="search-bar">
+
+<div class="search-input-wrap">
+<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+</svg>
+<input type="text" id="simpleSearch" class="search-input"
+placeholder="Search complaints..."
+oninput="render(); generateSuggestions();">
+</div>
+
+<div id="suggestions" class="suggestions"></div>
+
+<div class="search-filter-row">
+<!-- Status chips -->
+<div class="filter-chips" id="filterChips">
+  <button class="chip chip-active" data-status="" onclick="applyChipFilter('',this)">All</button>
+  <button class="chip" data-status="Pending" onclick="applyChipFilter('Pending',this)">Pending</button>
+  <button class="chip" data-status="In Progress" onclick="applyChipFilter('In Progress',this)">In Progress</button>
+  <button class="chip" data-status="Completed" onclick="applyChipFilter('Completed',this)">Completed</button>
+  <button class="chip" data-status="Delayed" onclick="applyChipFilter('Delayed',this)">Delayed</button>
+  <button class="chip" data-status="Escalated" onclick="applyChipFilter('Escalated',this)">Escalated</button>
+</div>
+
+<div class="search-controls">
+<input type="text"
+id="advLocationFilter"
+class="adv-filter loc-filter"
+placeholder="📍 Location..."
+oninput="render()">
+
+<div class="dropdown">
+<button class="search-btn" onclick="toggleSort()">Sort</button>
+<div class="dropdown-menu" id="sortMenu">
+<button onclick="applySort('id_desc')">ID (Newest)</button>
+<button onclick="applySort('id_asc')">ID (Oldest)</button>
+<button onclick="applySort('location_asc')">Location A-Z</button>
+<button onclick="applySort('location_desc')">Location Z-A</button>
+</div>
+</div>
+</div><!-- /.search-controls -->
+</div><!-- /.search-filter-row -->
+</div><!-- /.search-bar -->
+
+<table style="display:none"><tbody id="list-hidden"></tbody></table>
+
+<div id="feed" class="feed"></div>
+
+<div class="pagination">
+<button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Previous</button>
+<span id="pageInfo"></span>
+<button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+</div>
+
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- RIGHT SIDEBAR (slide-in panel) -->
+<div class="sidebar" id="sidebar">
+
+<div class="sidebar-header">
+  <h2>📊 Stats Panel</h2>
+  <button class="sidebar-close" onclick="toggleSidebar()" title="Close">×</button>
+</div>
+
+<div class="card">
+<h3>TOTAL COMPLAINTS</h3>
+<div class="total-number" id="totalCount">0</div>
+</div>
+
+<div class="card">
+<h3>Top Problem Areas</h3>
+<canvas id="barChart" style="width:100%;height:160px;display:block;"></canvas>
+</div>
+
+<div class="card">
+<h3>Resolution Time Stats</h3>
+<div class="stat-row" id="stat-inprogress-fastest">
+<div class="stat-icon fast">⚡</div>
+<span><strong>Fastest to In Progress:</strong> <span id="val-fastest">—</span></span>
+</div>
+<div class="stat-row" id="stat-avg">
+<div class="stat-icon warn">⏱</div>
+<span><strong>Avg. Resolution:</strong> <span id="val-avg">—</span></span>
+</div>
+<div class="stat-row" id="stat-escalated">
+<div class="stat-icon alert">🚨</div>
+<span><strong>Escalated (Delayed):</strong> <span id="val-escalated">—</span></span>
+</div>
+<div style="margin-top:10px;">
+  <button onclick="runEscalationCheck()" style="width:100%;padding:7px 0;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+    🔁 Run Escalation Check
+  </button>
+</div>
+</div>
+
+<div class="card" id="heatmapCard">
+<h3>Complaint Heatmap</h3>
+<div class="heatmap">
+  <div id="heatmapMap"></div>
+  <div class="heatmap-loading" id="heatmapLoading">
+    <div class="heatmap-spinner"></div>
+    <span>Loading map…</span>
+  </div>
+</div>
+<div class="heatmap-legend">
+  <span>Low</span>
+  <div class="heatmap-legend-bar"></div>
+  <span>High</span>
+</div>
+</div>
+
+</div>
+
+</main>
+
+<!-- POLL MODAL -->
+<div class="modal-overlay" id="pollModal">
+<div class="modal">
+<button class="modal-close" onclick="closePollModal()">×</button>
+<h4>📊 Create a Poll</h4>
+<input type="text" class="poll-question-input" id="pollQuestion" placeholder="Ask a question...">
+<div id="pollOptions">
+<div class="poll-option-row">
+<input type="text" placeholder="Option 1">
+<button class="poll-remove" onclick="removePollOption(this)" title="Remove">×</button>
+</div>
+<div class="poll-option-row">
+<input type="text" placeholder="Option 2">
+<button class="poll-remove" onclick="removePollOption(this)" title="Remove">×</button>
+</div>
+</div>
+<button class="btn-add-option" onclick="addPollOption()">+ Add option</button>
+<div class="poll-duration">
+<span>Poll duration:</span>
+<select id="pollDuration">
+<option>1 Day</option>
+<option>3 Days</option>
+<option selected>7 Days</option>
+<option>14 Days</option>
+</select>
+</div>
+<button class="btn-modal-submit" onclick="attachPoll()">Attach Poll</button>
+</div>
+</div>
+
+<!-- MOBILE BOTTOM NAV (Instagram-style) -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <!-- Home / Feed -->
+  <button class="mobile-nav-btn active" onclick="mobileNavActive(this); window.scrollTo({top:0,behavior:'smooth'})">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+      <polyline points="9 21 9 12 15 12 15 21"/>
+    </svg>
+    <span>Home</span>
+  </button>
+  <!-- Search -->
+  <button class="mobile-nav-btn" onclick="mobileNavActive(this); document.getElementById('simpleSearch').focus()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <span>Search</span>
+  </button>
+  <!-- New Post -->
+  <button class="mobile-nav-btn mobile-nav-post" onclick="mobileNavActive(this); document.getElementById('postInput').focus(); document.getElementById('postInput').scrollIntoView({behavior:'smooth',block:'center'})">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="4"/>
+      <line x1="12" y1="8" x2="12" y2="16"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+    <span>Post</span>
+  </button>
+  <!-- Stats Panel toggle -->
+  <button class="mobile-nav-btn" onclick="mobileNavActive(this); toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+    <span>Stats</span>
+  </button>
+  <!-- Filter -->
+  <button class="mobile-nav-btn" onclick="mobileNavActive(this); toggleFilter()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </svg>
+    <span>Filter</span>
+  </button>
+</nav>
+
+<!-- LOCATION MODAL -->
+<div class="modal-overlay" id="locModal">
+<div class="modal">
+<button class="modal-close" onclick="closeLocModal()">×</button>
+<h4>📍: </h4>
+<div class="loc-display" id="locDisplay">
+<span>Click the button below to detect your location</span>
+</div>
+<button class="btn-modal-submit" id="locBtn" onclick="detectLocation()">📡 Detect My Location</button>
+</div>
+</div>
+
+<script>
+let data = [];
+let filter = 'All';
+let currentPage = 1;
+const itemsPerPage = 5;
+let sortType = "";
+let selectedStatuses = new Set();
+
+/* attachment state */
+let attachedImages = [];
+let attachedPoll = null;
+let attachedLocation = null;
+
+const $ = id => document.getElementById(id);
+
+/* ---- IMAGE UPLOAD ---- */
+function triggerImageUpload(){
+$('fileInput').click();
+}
+
+function handleImageUpload(e){
+const files = Array.from(e.target.files);
+files.forEach(file => {
+const reader = new FileReader();
+reader.onload = ev => {
+attachedImages.push({ src: ev.target.result, name: file.name });
+renderAttachments();
+};
+reader.readAsDataURL(file);
+});
+e.target.value = '';
+}
+
+/* ---- POLL MODAL ---- */
+function openPollModal(){
+$('pollModal').classList.add('show');
+}
+function closePollModal(){ $('pollModal').classList.remove('show'); }
+
+function addPollOption(){
+const wrap = $('pollOptions');
+const idx = wrap.children.length + 1;
+const row = document.createElement('div');
+row.className = 'poll-option-row';
+row.innerHTML = `<input type="text" placeholder="Option ${idx}"><button class="poll-remove" onclick="removePollOption(this)" title="Remove">×</button>`;
+wrap.appendChild(row);
+}
+
+function removePollOption(btn){
+const rows = $('pollOptions').querySelectorAll('.poll-option-row');
+if(rows.length <= 2){ alert('A poll needs at least 2 options.'); return; }
+btn.closest('.poll-option-row').remove();
+}
+
+function attachPoll(){
+const question = $('pollQuestion').value.trim();
+if(!question){ alert('Please enter a question.'); return; }
+const opts = Array.from($('pollOptions').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
+if(opts.length < 2){ alert('Please fill in at least 2 options.'); return; }
+const duration = $('pollDuration').value;
+attachedPoll = { question, opts, duration };
+closePollModal();
+renderAttachments();
+}
+
+/* ---- LOCATION MODAL ---- */
+function openLocModal(){
+$('locModal').classList.add('show');
+$('locDisplay').className = 'loc-display';
+$('locDisplay').innerHTML = '<span>Click the button below to detect your location</span>';
+$('locBtn').textContent = '📡 Detect My Location';
+$('locBtn').onclick = detectLocation;
+attachedLocation = null;
+}
+function closeLocModal(){ $('locModal').classList.remove('show'); }
+
+function detectLocation(){
+const display = $('locDisplay');
+const btn = $('locBtn');
+display.innerHTML = '⏳ Detecting location...';
+if(!navigator.geolocation){ display.innerHTML = '❌ Geolocation not supported.'; return; }
+btn.disabled = true;
+navigator.geolocation.getCurrentPosition(
+pos => {
+const lat = pos.coords.latitude.toFixed(5);
+const lng = pos.coords.longitude.toFixed(5);
+attachedLocation = { lat, lng };
+display.className = 'loc-display found';
+display.innerHTML = `📍 <strong>Lat:</strong> ${c.location} &nbsp; <strong>Lng:</strong> ${lng}`;
+btn.textContent = '✅ Attach This Location';
+btn.disabled = false;
+btn.onclick = () => { closeLocModal(); renderAttachments(); };
+},
+() => {
+display.innerHTML = '❌ Could not get location. Please allow access.';
+btn.disabled = false;
+}
+);
+}
+
+/* ---- RENDER ATTACHMENTS ---- */
+function renderAttachments(){
+const wrap = $('postAttachments');
+wrap.innerHTML = '';
+
+attachedImages.forEach((img, i) => {
+const div = document.createElement('div');
+div.className = 'attach-thumb';
+div.innerHTML = `<img src="${img.src}" alt="${img.name}"><button class="attach-remove" onclick="removeImage(${i})" title="Remove">×</button>`;
+wrap.appendChild(div);
+});
+
+if(attachedPoll){
+const div = document.createElement('div');
+div.className = 'attach-poll-preview';
+div.innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+<div class="poll-title">📊 ${attachedPoll.question}</div>
+<button onclick="removePoll()" style="background:none;border:none;cursor:pointer;color:var(--mid);font-size:18px;line-height:1;">×</button>
+</div>
+${attachedPoll.opts.map(o=>`<div class="poll-opt">${o}</div>`).join('')}
+<div style="font-size:11px;color:var(--mid);margin-top:8px;">⏱ Duration: ${attachedPoll.duration}</div>`;
+wrap.appendChild(div);
+}
+
+if(attachedLocation){
+const div = document.createElement('div');
+div.innerHTML = `<span class="attach-loc-tag">📍 ${c.location} <button onclick="removeLocation()" title="Remove">×</button></span>`;
+wrap.appendChild(div.firstChild);
+}
+
+const hasAny = attachedImages.length || attachedPoll || attachedLocation;
+wrap.classList.toggle('has-items', !!hasAny);
+}
+
+function removeImage(i){ attachedImages.splice(i,1); renderAttachments(); }
+function removePoll(){ attachedPoll=null; renderAttachments(); }
+function removeLocation(){ attachedLocation=null; renderAttachments(); }
+
+/* ---- SUBMIT POST ---- */
+function submitPost(){
+const text = $('postInput').value.trim();
+if(!text && !attachedImages.length && !attachedPoll && !attachedLocation){
+alert('Please write a message or add an attachment.');
+return;
+}
+const parts = [];
+if(text) parts.push(`Message: "${text}"`);
+if(attachedImages.length) parts.push(`${attachedImages.length} image(s)`);
+if(attachedPoll) parts.push(`Poll: "${attachedPoll.question}"`);
+if(attachedLocation) parts.push(`Location: ${c.location}`);
+alert('✅ Posted!\n\n' + parts.join('\n'));
+$('postInput').value = '';
+attachedImages = [];
+attachedPoll = null;
+attachedLocation = null;
+renderAttachments();
+}
+
+/* ---- ORIGINAL FUNCTIONS (unchanged) ---- */
+function closeAll(){ $("sortMenu").style.display="none"; }
+function toggleSort(){ const m=$("sortMenu"); const open=m.style.display==="flex"; closeAll(); if(!open)m.style.display="flex"; }
+document.addEventListener("click",e=>{ if(!e.target.closest(".dropdown")) closeAll(); });
+
+let activeChipStatus = '';
+
+function applyChipFilter(status, btn){
+  activeChipStatus = status;
+  currentPage = 1;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-active'));
+  btn.classList.add('chip-active');
+  render();
+}
+
+function applyStatusFilter(status, btn){ applyChipFilter(status, btn); }
+function clearMultiFilter(){
+  activeChipStatus = '';
+  selectedStatuses.clear();
+  const allChip = document.querySelector('.chip[data-status=""]');
+  if(allChip) applyChipFilter('', allChip);
+}
+
+function applySort(type){ sortType=type; render(); }
+
+function setFilter(f, btn){
+  const chip = document.querySelector(`.chip[data-status="${f === 'All' ? '' : f}"]`);
+  if(chip) applyChipFilter(f === 'All' ? '' : f, chip);
+}
+
+function generateSuggestions(){
+const input=$("simpleSearch").value.toLowerCase().trim();
+const box=$("suggestions");
+if(!input){box.style.display="none";return;}
+const matches=data.filter(c=>(c.description||"").toLowerCase().includes(input)).slice(0,5);
+if(!matches.length){box.style.display="none";return;}
+box.innerHTML=matches.map(c=>
+`<div class="suggestion-item" onclick="selectSuggestion('${c.description.replace(/'/g,"")}')">${c.description}</div>`
+).join("");
+box.style.display="block";
+}
+function selectSuggestion(text){ $("simpleSearch").value=text; $("suggestions").style.display="none"; render(); }
+document.addEventListener("click",e=>{ if(!e.target.closest(".search-bar")) $("suggestions").style.display="none"; });
+
+function highlight(text,words){
+if(!words.length)return text;
+words.forEach(w=>{ const r=new RegExp(`(${w})`,"gi"); text=text.replace(r,"<mark>$1</mark>"); });
+return text;
+}
+
+function render(){
+let filtered=data;
+// Status chip filter
+if(activeChipStatus) filtered=filtered.filter(c=>c.status===activeChipStatus);
+const raw=$("simpleSearch").value.trim().toLowerCase();
+const words=raw.split(" ").filter(w=>w);
+if(words.length){
+filtered=filtered.filter(c=>{
+const combined=((c.description||"")+" "+(c.location||"")).toLowerCase();
+return words.every(w=>combined.includes(w));
+});
+}
+const advLocation=$("advLocationFilter").value.toLowerCase().trim();
+if(advLocation)
+filtered=filtered.filter(c=>(c.location||"").toLowerCase().includes(advLocation));
+if(sortType){
+filtered.sort((a,b)=>{
+if(sortType==='id_desc') return b.id-a.id;
+if(sortType==='id_asc') return a.id-b.id;
+if(sortType==='location_asc') return (a.location||"").localeCompare(b.location||"");
+if(sortType==='location_desc') return (b.location||"").localeCompare(a.location||"");
+});
+}
+const totalPages=Math.ceil(filtered.length/itemsPerPage)||1;
+if(currentPage>totalPages) currentPage=totalPages;
+const start=(currentPage-1)*itemsPerPage;
+const paginated=filtered.slice(start,start+itemsPerPage);
+
+const feed = $("feed");
+if(!paginated.length){
+  feed.innerHTML = `<div class="feed-empty">No complaints found.</div>`;
+} else {
+  feed.innerHTML = paginated.map(c => {
+    let desc = highlight(c.description||"", words);
+    let loc  = highlight(c.location||"", words);
+    const sid = 'sel-'+c.id;
+    const cur = c.status || 'Pending';
+    const sc  = statusClass(cur);
+    const timeAgo = c.date ? formatDate(c.date) : 'Recently';
+    return `
+    <div class="post-card" id="card-${c.id}">
+      <div class="post-card-header">
+        <div class="post-card-avatar">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div class="post-card-meta">
+          <span class="post-card-user">Complaint #${c.id}</span>
+          <span class="post-card-time">📍 ${loc} &nbsp;·&nbsp; ${timeAgo}</span>
+        </div>
+        <span class="pill ${sc}-pill post-card-status-pill">${cur}</span>
+      </div>
+      ${c.image ? `<div class="post-card-img-wrap"><img src="/${c.image}" alt="complaint image" class="post-card-img" loading="lazy"></div>` : ''}
+      <div class="post-card-body">
+        <p class="post-card-desc">${desc}</p>
+      </div>
+      <div class="post-card-footer">
+        <div class="post-card-actions">
+          <button class="post-card-action-btn" onclick="toggleComment(${c.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            Respond
+          </button>
+        </div>
+        <div class="post-card-status-wrap">
+          <select class="status-select ${sc}" id="${sid}" onchange="changeStatus(${c.id},this)">
+            <option value="Pending"    ${cur==='Pending'    ?'selected':''}>Pending</option>
+            <option value="In Progress" ${cur==='In Progress' ?'selected':''}>In Progress</option>
+            <option value="Completed"   ${cur==='Completed'   ?'selected':''}>Completed</option>
+            <option value="Delayed"     ${cur==='Delayed'     ?'selected':''}>Delayed</option>
+            <option value="Escalated"  ${cur==='Escalated'  ?'selected':''}>Escalated</option>
+          </select>
+        </div>
+      </div>
+      <div class="post-card-comment-box" id="comment-${c.id}" style="display:none;">
+        <input type="text" class="comment-input" placeholder="Write a comment..." onkeydown="if(event.key==='Enter') submitComment(${c.id}, this)">
+        <button class="comment-submit" onclick="submitComment(${c.id}, this.previousElementSibling)">Send</button>
+      </div>
+      <div class="post-card-comments" id="comments-list-${c.id}"></div>
+    </div>`;
+  }).join('');
+}
+
+$("pageInfo").textContent=`Page ${currentPage} of ${totalPages}`;
+$("prevBtn").disabled=currentPage===1;
+$("nextBtn").disabled=currentPage===totalPages;
+document.getElementById("totalCount").textContent = data.length;
+}
+
+function statusClass(s){
+if(s==='Pending')    return 's-Pending';
+if(s==='In Progress') return 's-inprogress';
+if(s==='Completed')   return 's-completed';
+if(s==='Delayed')     return 's-delayed';
+if(s==='Escalated')   return 's-escalated';
+return 's-Pending';
+}
+
+/* ================================================================
+   RESOLUTION TIME ENGINE
+   ================================================================
+   Tracks:
+   - statusTimestamps[id] = { received, inProgress, completed }
+   - Fastest "In Progress" time = min(inProgress - received) across all complaints
+   - Average resolution time    = avg(completed - received) for Completed complaints
+   - Escalation rule: if a complaint is still Pending/In Progress and
+     (now - received) > avgResolutionTime  →  mark as Delayed
+   ================================================================ */
+
+const statusTimestamps = JSON.parse(localStorage.getItem('cms_timestamps') || '{}');
+
+function saveTimestamps(){
+  try { localStorage.setItem('cms_timestamps', JSON.stringify(statusTimestamps)); } catch(e){}
+}
+
+/* Ensure a complaint has a "received" timestamp (use c.date if available) */
+function ensureReceived(c){
+  if(!statusTimestamps[c.id]) statusTimestamps[c.id] = {};
+  if(!statusTimestamps[c.id].received){
+    statusTimestamps[c.id].received = c.date ? new Date(c.date).getTime() : Date.now();
+    saveTimestamps();
+  }
+}
+
+function msToHuman(ms){
+  if(ms == null || isNaN(ms)) return '—';
+  const totalMin = Math.round(ms / 60000);
+  if(totalMin < 60)   return totalMin + ' min';
+  const hrs = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  if(hrs < 24)        return hrs + 'h ' + (mins ? mins + 'm' : '');
+  const days = Math.floor(hrs / 24);
+  const remHrs = hrs % 24;
+  return days + 'd ' + (remHrs ? remHrs + 'h' : '');
+}
+
+/* ---- Compute stats from current data ---- */
+function computeResolutionStats(){
+  // Ensure all complaints have a received timestamp
+  data.forEach(ensureReceived);
+
+  // Fastest time to "In Progress"
+  const inProgressTimes = [];
+  data.forEach(c => {
+    const ts = statusTimestamps[c.id];
+    if(ts && ts.inProgress && ts.received){
+      inProgressTimes.push(ts.inProgress - ts.received);
+    }
+  });
+  const fastestInProgress = inProgressTimes.length
+    ? Math.min(...inProgressTimes)
+    : null;
+
+  // Average resolution time (Completed complaints)
+  const resTimes = [];
+  data.forEach(c => {
+    const ts = statusTimestamps[c.id];
+    if(ts && ts.completed && ts.received){
+      resTimes.push(ts.completed - ts.received);
+    }
+    // Fallback: if status is Completed but no timestamp recorded, estimate from date
+    else if(c.status === 'Completed' && ts && ts.received){
+      // Use now as an approximation of completion (shouldn't happen in real use)
+    }
+  });
+  const avgResolution = resTimes.length
+    ? resTimes.reduce((a, b) => a + b, 0) / resTimes.length
+    : null;
+
+  return { fastestInProgress, avgResolution };
+}
+
+/* ---- Escalation check: mark overdue open complaints as Delayed ---- */
+function runEscalationCheck(){
+  const { avgResolution } = computeResolutionStats();
+
+  // Fallback SLA: 48 hours if no completed data yet
+  const sla = avgResolution || (48 * 3600 * 1000);
+  const now = Date.now();
+  let escalated = 0;
+
+  data.forEach(c => {
+    if(c.status === 'Pending' || c.status === 'In Progress'){
+      ensureReceived(c);
+      const ts = statusTimestamps[c.id];
+      const age = now - ts.received;
+      if(age > sla){
+        c.status = 'Escalated';
+        // Persist via API if available
+        fetch(`/complaints/${c.id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ status: 'Escalated' })
+        }).catch(() => {});
+        escalated++;
+      }
+    }
+  });
+
+  updateResolutionUI();
+  render();
+
+  const { fastestInProgress, avgResolution: avg } = computeResolutionStats();
+  const slaLabel = avg ? msToHuman(avg) : '48h (default SLA)';
+  if(escalated > 0){
+    alert(`🚨 Escalation Complete!\n\n${escalated} complaint(s) exceeded the avg resolution time (${slaLabel}) and have been marked as Delayed.`);
+  } else {
+    alert(`✅ No escalations needed.\n\nAll open complaints are within the resolution window (${slaLabel}).`);
+  }
+}
+
+/* ---- Update the sidebar stats card ---- */
+function updateResolutionUI(){
+  const { fastestInProgress, avgResolution } = computeResolutionStats();
+  const escalatedCount = data.filter(c => c.status === 'Escalated').length;
+
+  const elFastest = document.getElementById('val-fastest');
+  const elAvg     = document.getElementById('val-avg');
+  const elEsc     = document.getElementById('val-escalated');
+
+  if(elFastest) elFastest.textContent = fastestInProgress != null ? msToHuman(fastestInProgress) : '— (none yet)';
+  if(elAvg)     elAvg.textContent     = avgResolution != null
+    ? msToHuman(avgResolution) + ' (from ' + data.filter(c=>c.status==='Completed').length + ' resolved)'
+    : '— (no resolved complaints yet)';
+  if(elEsc)     elEsc.textContent     = escalatedCount + ' complaint' + (escalatedCount !== 1 ? 's' : '');
+}
+
+/* ================================================================
+   PATCHED changeStatus — records timestamps + updates stats
+   ================================================================ */
+function changeStatus(id, sel){
+  const c = data.find(d => d.id === id);
+  if(!c) return;
+
+  const prev = c.status;
+  c.status = sel.value;
+  sel.className = 'status-select ' + statusClass(sel.value);
+
+  // Update pill in card header
+  const card = document.getElementById('card-' + id);
+  if(card){
+    const pill = card.querySelector('.post-card-status-pill');
+    if(pill){
+      pill.textContent = sel.value;
+      pill.className   = 'pill ' + statusClass(sel.value) + '-pill post-card-status-pill';
+    }
+  }
+
+  // ---- Timestamp tracking ----
+  ensureReceived(c);
+  if(!statusTimestamps[id]) statusTimestamps[id] = {};
+
+  if(sel.value === 'In Progress' && prev !== 'In Progress'){
+    // Only record the FIRST time it moves to In Progress (fastest metric)
+    if(!statusTimestamps[id].inProgress){
+      statusTimestamps[id].inProgress = Date.now();
+    }
+  }
+  if(sel.value === 'Completed' && prev !== 'Completed'){
+    statusTimestamps[id].completed = Date.now();
+  }
+  // If manually moved OUT of Delayed, clear completed so it's re-evaluable
+  if(sel.value === 'Pending' || sel.value === 'In Progress'){
+    delete statusTimestamps[id].completed;
+  }
+
+  saveTimestamps();
+
+  // Persist status change to backend
+  fetch(`/complaints/${id}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ status: sel.value })
+  }).catch(() => {});
+
+  // Refresh stats sidebar
+  updateResolutionUI();
+}
+
+function changePage(d){ currentPage+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---- SIDEBAR TOGGLE ---- */
+function _toggleSidebarCore(){
+  const sb = $('sidebar');
+  const ov = $('sidebarOverlay');
+  const mainEl = document.querySelector('main');
+
+  if(window.innerWidth >= 769){
+    // Desktop: toggle collapse
+    const collapsed = sb.classList.toggle('desktop-collapsed');
+    if(mainEl) mainEl.classList.toggle('sidebar-collapsed', collapsed);
+    if(!collapsed) setTimeout(renderBarChart, 50);
+  } else {
+    // Mobile: slide-in overlay
+    const open = sb.classList.toggle('open');
+    ov.classList.toggle('show', open);
+    if(open) setTimeout(renderBarChart, 50);
+  }
+}
+function toggleSidebar(){ _toggleSidebarCore(); }
+
+/* ---- LIKE ---- */
+const likes = {};
+function likeCard(id, btn){
+  likes[id] = (likes[id]||0) + 1;
+  $('likes-'+id).textContent = likes[id];
+  btn.classList.add('liked');
+  btn.querySelector('svg').style.fill = '#ef4444';
+  btn.querySelector('svg').style.stroke = '#ef4444';
+}
+
+/* ---- COMMENTS ---- */
+function toggleComment(id){
+  const box = $('comment-'+id);
+  const isHidden = box.style.display === 'none';
+  box.style.display = isHidden ? 'flex' : 'none';
+  if(isHidden) box.querySelector('input').focus();
+}
+
+function submitComment(id, input){
+  const text = input.value.trim();
+  if(!text) return;
+  const list = $('comments-list-'+id);
+  const div = document.createElement('div');
+  div.className = 'post-comment';
+  div.innerHTML = `<span class="comment-author">Admin</span><span class="comment-text">${text}</span>`;
+  list.appendChild(div);
+  input.value = '';
+}
+
+/* ---- DATE FORMAT ---- */
+function formatDate(dateStr){
+  if(!dateStr) return 'Recently';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return dateStr;
+  const diff = Math.floor((Date.now()-d)/1000);
+  if(diff < 60) return 'Just now';
+  if(diff < 3600) return Math.floor(diff/60)+'m ago';
+  if(diff < 86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+
+function renderBarChart(){
+  const canvas = $('barChart');
+  if(!canvas) return;
+
+  // Count complaints per location from full dataset
+  const counts = {};
+  data.forEach(c => {
+    const loc = (c.location || 'Unknown').trim();
+    counts[loc] = (counts[loc] || 0) + 1;
+  });
+
+  // Get top 5 locations by count
+  const top5 = Object.entries(counts)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,5);
+
+  if(!top5.length) return;
+
+  // Set canvas resolution for crisp rendering
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.offsetWidth || 220;
+  const cssH = 160;
+  canvas.width  = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.height = cssH + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const W = cssW;
+  const H = cssH;
+
+  // Layout
+  const padL = 32, padR = 8, padT = 18, padB = 38;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+
+  // Y scale — nice round max
+  const maxVal = top5[0][1];
+  const niceMax = Math.ceil(maxVal / 5) * 5 || 10;
+  const steps = 4;
+  const stepVal = niceMax / steps;
+
+  // Gridlines & Y labels
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${9 * (1/dpr) + 8}px IBM Plex Sans, sans-serif`;
+  ctx.font = '9px IBM Plex Sans, sans-serif';
+
+  for(let i = 0; i <= steps; i++){
+    const val = stepVal * i;
+    const y = padT + chartH - (val / niceMax) * chartH;
+
+    // Gridline
+    ctx.beginPath();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + chartW, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Y label
+    ctx.fillStyle = '#9ca3af';
+    ctx.fillText(Math.round(val), padL - 4, y);
+  }
+
+  // Axes
+  ctx.beginPath();
+  ctx.strokeStyle = '#d1d5db';
+  ctx.lineWidth = 1.5;
+  // Y axis
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + chartH);
+  // X axis
+  ctx.lineTo(padL + chartW, padT + chartH);
+  ctx.stroke();
+
+  // Bars
+  const barColors = ['#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe'];
+  const n = top5.length;
+  const totalGap = chartW * 0.35;
+  const barW = (chartW - totalGap) / n;
+  const gap = totalGap / (n + 1);
+
+  top5.forEach(([loc, count], i) => {
+    const barH = (count / niceMax) * chartH;
+    const x = padL + gap + i * (barW + gap);
+    const y = padT + chartH - barH;
+
+    // Bar with rounded top
+    ctx.fillStyle = barColors[i] || '#2563eb';
+    const r = Math.min(4, barW / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barW - r, y);
+    ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+    ctx.lineTo(x + barW, y + barH);
+    ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+
+    const cx = x + barW / 2;
+
+    // Value label on top
+    ctx.fillStyle = '#1e40af';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.font = 'bold 9px IBM Plex Sans, sans-serif';
+    ctx.fillText(count, cx, y - 2);
+
+    // X label — wrap into 2 lines max
+    const words = loc.split(/[\s,]+/);
+    const line1 = words.slice(0, Math.ceil(words.length/2)).join(' ');
+    const line2 = words.slice(Math.ceil(words.length/2)).join(' ');
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '8px IBM Plex Sans, sans-serif';
+    ctx.textBaseline = 'top';
+    const yLbl = padT + chartH + 5;
+    ctx.fillText(line1, cx, yLbl);
+    if(line2) ctx.fillText(line2, cx, yLbl + 10);
+  });
+}
+
+/* ---- MOBILE NAV ACTIVE STATE ---- */
+function mobileNavActive(btn){
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ================================================================
+   HEATMAP — Leaflet + OpenStreetMap + Nominatim (100% free)
+   ================================================================ */
+
+let heatmapMap      = null;   // Leaflet map instance
+let heatmapLayer    = null;   // Leaflet.heat layer
+let heatmapIniting  = false;
+const geocodeCache  = {};     // { locationStr -> [lat, lng] }
+
+/* ---- Inject Leaflet CSS + JS + leaflet-heat plugin ---- */
+function loadLeaflet(){
+  return new Promise((resolve, reject) => {
+    if(window.L && window.L.heatLayer){ resolve(); return; }
+
+    // 1. Leaflet CSS
+    if(!document.getElementById('leaflet-css')){
+      const link = document.createElement('link');
+      link.id   = 'leaflet-css';
+      link.rel  = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+      document.head.appendChild(link);
+    }
+
+    // 2. Leaflet JS
+    const script1 = document.createElement('script');
+    script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    script1.onload = () => {
+      // 3. Leaflet.heat plugin (heatmap layer)
+      const script2 = document.createElement('script');
+      script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js';
+      script2.onload  = resolve;
+      script2.onerror = () => reject(new Error('Failed to load leaflet-heat'));
+      document.head.appendChild(script2);
+    };
+    script1.onerror = () => reject(new Error('Failed to load Leaflet'));
+    document.head.appendChild(script1);
+  });
+}
+
+/* ---- Geocode via Nominatim (OSM) — 1 req/sec limit honoured ---- */
+let _nominatimQueue = Promise.resolve();
+function geocodeLocation(locationStr){
+  // Chain requests to stay under Nominatim's 1 req/sec policy
+  _nominatimQueue = _nominatimQueue.then(async () => {
+    await new Promise(r => setTimeout(r, 1050)); // 1.05s gap
+  });
+  return _nominatimQueue.then(async () => {
+    if(geocodeCache[locationStr]) return geocodeCache[locationStr];
+    try {
+      const encoded = encodeURIComponent(locationStr);
+      const res  = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'ComplaintDashboard/1.0' } }
+      );
+      const json = await res.json();
+      if(json.length){
+        const coords = [parseFloat(json[0].lat), parseFloat(json[0].lon)];
+        geocodeCache[locationStr] = coords;
+        return coords;
+      }
+    } catch(e){}
+    return null;
+  });
+}
+
+/* ---- Show error inside the map div ---- */
+function heatmapError(msg){
+  const wrap = $('heatmapMap');
+  if(!wrap) return;
+  const loading = $('heatmapLoading');
+  if(loading) loading.style.display = 'none';
+  wrap.innerHTML = `
+    <div class="heatmap-error">
+      <span style="font-size:18px">⚠️</span>
+      <span>${msg}</span>
+    </div>`;
+}
+
+/* ---- Build / refresh the heatmap layer ---- */
+async function renderHeatmapData(){
+  if(!heatmapMap) return;
+
+  // Tally complaints per location string
+  const locationCounts = {};
+  data.forEach(c => {
+    const loc = (c.location || '').trim();
+    if(loc) locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+  });
+
+  const uniqueLocs = Object.keys(locationCounts);
+  if(!uniqueLocs.length) return;
+
+  // Status badge on the map while geocoding
+  const badge = document.createElement('div');
+  badge.style.cssText = [
+    'position:absolute','top:8px','left:50%','transform:translateX(-50%)',
+    'background:rgba(17,24,39,0.75)','color:#fff','font-size:11px',
+    'padding:4px 12px','border-radius:20px','z-index:1000',
+    'pointer-events:none','font-family:IBM Plex Sans,sans-serif',
+    'white-space:nowrap','backdrop-filter:blur(4px)'
+  ].join(';');
+  badge.id = 'geocodeBadge';
+  $('heatmapMap').appendChild(badge);
+
+  const points  = [];
+  const latLngs = [];
+  let done = 0;
+
+  const updateBadge = () => {
+    badge.textContent = `Geocoding ${done}/${uniqueLocs.length} locations…`;
+  };
+  updateBadge();
+
+  // Kick off all geocode requests (they self-throttle via the queue)
+  const promises = uniqueLocs.map(loc =>
+    geocodeLocation(loc).then(coords => {
+      done++;
+      updateBadge();
+      if(coords){
+        const weight = locationCounts[loc];
+        points.push([coords[0], coords[1], weight]);
+        latLngs.push(L.latLng(coords[0], coords[1]));
+      }
+    })
+  );
+  await Promise.all(promises);
+  badge.remove();
+
+  if(!points.length){
+    heatmapError('No locations could be geocoded. Check your location data.');
+    return;
+  }
+
+  // Remove old layer
+  if(heatmapLayer){ heatmapMap.removeLayer(heatmapLayer); heatmapLayer = null; }
+
+  // Max weight for normalisation
+  const maxWeight = Math.max(...points.map(p => p[2]));
+
+  heatmapLayer = L.heatLayer(points, {
+    radius    : 28,
+    blur      : 20,
+    maxZoom   : 17,
+    max       : maxWeight,
+    gradient  : { 0.2:'#4ade80', 0.5:'#facc15', 0.75:'#f97316', 1:'#ef4444' }
+  }).addTo(heatmapMap);
+
+  // Fit bounds to all geocoded points
+  if(latLngs.length){
+    const bounds = L.latLngBounds(latLngs);
+    heatmapMap.fitBounds(bounds, { padding:[24,24], maxZoom:14 });
+  }
+}
+
+/* ---- Initialise Leaflet map ---- */
+async function initHeatmap(){
+  if(heatmapIniting || heatmapMap) return;
+  heatmapIniting = true;
+
+  // Show spinner
+  const loading = $('heatmapLoading');
+  if(loading) loading.style.display = 'flex';
+
+  try {
+    await loadLeaflet();
+  } catch(e){
+    heatmapError(e.message);
+    heatmapIniting = false;
+    return;
+  }
+
+  const mapEl = $('heatmapMap');
+  if(!mapEl){ heatmapIniting = false; return; }
+
+  // Remove loading overlay
+  if(loading) loading.style.display = 'none';
+
+  heatmapMap = L.map(mapEl, {
+    center        : [20.5937, 78.9629], // India fallback — overridden by data
+    zoom          : 5,
+    zoomControl   : true,
+    attributionControl: false           // kept minimal for sidebar size
+  });
+
+  // OpenStreetMap tiles — completely free
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom    : 19,
+    attribution: '© <a href="https://openstreetmap.org">OSM</a>'
+  }).addTo(heatmapMap);
+
+  // Small attribution in corner
+  L.control.attribution({ position:'bottomright', prefix:'' })
+    .addAttribution('© <a href="https://openstreetmap.org">OpenStreetMap</a>')
+    .addTo(heatmapMap);
+
+  heatmapIniting = false;
+  await renderHeatmapData();
+}
+
+/* ---- Patch toggleSidebar to trigger map init / resize ---- */
+function toggleSidebar(){
+  _toggleSidebarCore();
+  const sb = $('sidebar');
+  setTimeout(() => {
+    const visible = window.innerWidth >= 769
+      ? !sb.classList.contains('desktop-collapsed')
+      : sb.classList.contains('open');
+    if(visible && !heatmapMap) initHeatmap();
+    if(visible && heatmapMap)  heatmapMap.invalidateSize();
+  }, 320);
+}
+
+/* ---- load() — fetch complaints, render, refresh heatmap ---- */
+async function load(){
+  data = await (await fetch('/complaints')).json();
+  data.forEach(ensureReceived);
+  render();
+  renderBarChart();
+  updateResolutionUI();
+  if(heatmapMap) await renderHeatmapData();
+}
+
+// Auto-init on page load (sidebar is open by default on desktop)
+setTimeout(initHeatmap, 600);
+load();
+
+window.addEventListener('resize', () => {
+  renderBarChart();
+  if(heatmapMap) heatmapMap.invalidateSize();
+  if(window.innerWidth >= 769){
+    const ov = $('sidebarOverlay');
+    if(ov) ov.classList.remove('show');
+  }
+});
+</script>
+
+</body>
+</html>

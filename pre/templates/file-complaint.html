@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Portal</title>
+
+  <style>
+    /* Page background and flex centering */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom right, rgba(255, 247, 240, 0.85), rgba(255, 231, 210, 0.85)),
+  url('/static/img.jpeg') no-repeat center center fixed;
+background-size: cover; /* orange sides */
+}
+
+/* Flex wrapper to center the form */
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* top align like Google Forms */
+  min-height: 100vh;
+}
+
+/* White form container */
+.container {
+  background: #fff;
+  width: 90%;
+  max-width: 500px;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+/* Header styling */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Form inputs stacked vertically */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* spacing between inputs */
+}
+
+label, textarea, select, input, button {
+  font-size: 16px;
+}
+
+textarea, input[type="file"], select, button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background: rgb(242, 198, 76);
+  color: black;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: darkorange;
+}
+
+#cameraSection {
+  display: none; /* hidden until camera mode selected */
+}
+
+video, canvas {
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+/* Center the file input */
+#uploadSection {
+  display: flex;
+  justify-content: center;  /* horizontal center */
+  align-items: center;      /* vertical center if taller */
+}
+
+#fileInput {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+header{
+    background: rgb(255, 159, 42);
+    color: black;
+    padding: 7px;
+    text-align: center;
+}
+</style>
+
+</head>
+<body>
+  <header>
+    <h1>REPORT A COMPLAINT</h1>
+    <p>Report issues and track transparency</p>
+  </header>
+<div class="wrapper">
+  <div class="container">
+    <!-- Mode Selection -->
+    <label>Select Image Source:</label>
+    <select id="mode">
+      <option value="upload">Upload Image</option>
+      <option value="camera">Click Photo</option>
+    </select>
+
+    <form id="form">
+      <!-- Upload Section -->
+      <div id="uploadSection">
+        <input type="file" name="image" id="fileInput"><br><br>
+      </div>
+
+      <!-- Camera Section -->
+      <div id="cameraSection">
+        <video id="video" autoplay></video><br>
+        <button type="button" id="flipCamera">🔄 Reverse Camera</button><br>
+        <button type="button" id="snap">Capture Photo</button><br>
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <textarea name="description" placeholder="Describe issue"></textarea>
+
+      <input type="hidden" name="lat" id="lat">
+      <input type="hidden" name="lng" id="lng">
+
+      <button type="submit">Submit Complaint</button>
+    </form>
+  </div>
+  </div>
+
+  <script>
+const mode = document.getElementById("mode");
+const uploadSection = document.getElementById("uploadSection");
+const cameraSection = document.getElementById("cameraSection");
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const snap = document.getElementById("snap");
+const form = document.getElementById("form");
+const lat = document.getElementById("lat");
+const lng = document.getElementById("lng");
+const flipBtn = document.getElementById("flipCamera");
+
+let cameraStream = null;
+let capturedBlob = null;
+let facingMode = "environment"; // default back camera
+
+// ===== Location auto =====
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    lat.value = pos.coords.latitude;
+    lng.value = pos.coords.longitude;
+  });
+}
+
+// ===== Start Camera Function =====
+async function startCamera() {
+  try {
+    // stop old stream
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+    }
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode },
+      audio: false
+    });
+
+    video.srcObject = cameraStream;
+
+  } catch (err) {
+    console.error("Camera error:", err);
+    alert("Camera access denied or not available");
+  }
+}
+
+// ===== Mode switch =====
+mode.onchange = async () => {
+  if (mode.value === "camera") {
+    uploadSection.style.display = "none";
+    cameraSection.style.display = "block";
+    await startCamera();
+  } else {
+    uploadSection.style.display = "block";
+    cameraSection.style.display = "none";
+
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+  }
+};
+
+// ===== Reverse Camera =====
+if (flipBtn) {
+  flipBtn.onclick = async () => {
+    facingMode = facingMode === "environment" ? "user" : "environment";
+    await startCamera();
+  };
+}
+
+// ===== Capture photo =====
+snap.onclick = () => {
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+
+  canvas.toBlob(blob => {
+    capturedBlob = blob;
+  }, "image/jpeg");
+};
+
+// ===== Submit =====
+form.onsubmit = async (e) => {
+  e.preventDefault();
+
+  let fd = new FormData();
+
+  fd.append("description", form.description.value);
+  fd.append("lat", lat.value);
+  fd.append("lng", lng.value);
+
+  // ===== IMAGE HANDLING =====
+  if (mode.value === "camera") {
+    if (!capturedBlob) {
+      alert("Please capture photo first");
+      return;
+    }
+
+    const file = new File([capturedBlob], "capture.jpg", {
+      type: "image/jpeg"
+    });
+
+    fd.append("image", file);
+
+  } else {
+    const fileInput = document.getElementById("fileInput");
+
+    if (!fileInput.files[0]) {
+      alert("Please select image");
+      return;
+    }
+
+    fd.append("image", fileInput.files[0]);
+  }
+
+  try {
+    const res = await fetch("/submit", {
+      method: "POST",
+      body: fd
+    });
+
+    const data = await res.json();
+    alert("Complaint submitted!");
+
+  } catch (err) {
+    console.error(err);
+    alert("Submission failed");
+  }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"
+        integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>
+
+
+
+
+
